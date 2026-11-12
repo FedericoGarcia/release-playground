@@ -1,6 +1,6 @@
 {
   "name": "@fedegarcia/playground-c",
-  "version": "0.0.0",
+  "version": "0.2.0",
   "description": "Throwaway package used to rehearse adding a package to an existing release pipeline.",
   "keywords": [
     "playground"
