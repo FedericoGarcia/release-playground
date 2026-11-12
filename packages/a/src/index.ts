@@ -1,8 +1,8 @@
 /**
- * Builds a greeting for the given name.
+ * Builds a greeting for the given name, ignoring surrounding whitespace.
  */
 export function greet(name: string): string {
-  return `Hello, ${name}`;
+  return `Hello, ${name.trim()}`;
 }
 
 /**
