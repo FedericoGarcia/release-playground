@@ -26,13 +26,16 @@ Each scenario answers one question. Record the answer next to it.
 4. **Peer range.** What range does the published `b` declare for `a`?
    Local `pnpm pack`: `workspace:*` is published as the exact version (`"0.0.0"`). Whether that hurts consumers depends on scenario 5: if every release of `a` also releases `b` with the new pin, the latest versions always match. `workspace:^` publishes a caret range, but a caret on `0.0.x` is still exact.
 5. **Dependency cascade.** When only `a` changes, does `updatePeerDependencies` bump `b` too, to which version, and what does the source `package.json` of `b` say afterwards?
-6. **New package.** Adding a package `c` with `0.0.0` in the manifest: does a `feat` commit release it as `0.0.1` (because of `bump-patch-for-minor-pre-major`), and does a `Release-As: 0.1.0` footer make it debut at `0.1.0`?
+   Answer: `b` gets a patch bump (`0.0.0` → `0.0.1`) with a "Dependencies" changelog entry, and its source `package.json` keeps `workspace:*`, so the published `b` pins whatever version `a` has at publish time.
+6. **New package.** Adding a package `c` with `0.0.0` in the manifest: does a `feat` commit release it at `initial-version`, and does a `Release-As` footer override it?
+   Found with `a`: without `initial-version`, the first release of a package with a `feat` commit was `1.0.0`, ignoring both `bump-*-pre-major` options. `initial-version: "0.1.0"` was added to the config to make first releases start at `0.1.0`.
 7. **Private package.** Is `config/typescript` skipped without failing the job?
    Local `pnpm -r publish --dry-run`: only `a` and `b` are selected; the private packages are skipped silently.
 8. **Rerun.** Does a `force_publish` dispatch after a successful publish pass without publishing anything? Because npm processes a publish for a few minutes before the version becomes readable, also try a rerun inside that window: the "already published" check reads 404 there and may try to publish the same version again.
 9. **Tarball contents.** Does each tarball hold only `dist`, `README.md`, `LICENSE` and `package.json`?
    Local `pnpm pack`: only those four entries ship. The published manifest keeps `"@playground/source": "./src/index.ts"` pointing at a file that is not in the tarball, and publint 0.3.25 reports "All good!" anyway. A `publishConfig.exports` without that condition removes it from the published manifest while development keeps resolving `src`. `devDependencies` ship with the private `@config/typescript` rewritten to `0.0.0`, and `dist/index.d.ts.map` points at `../src/index.ts`, which is not shipped either.
 10. **Checks on the release pull request.** release-please opens its pull request with `GITHUB_TOKEN`, and events created with that token start no workflows. Does `CI` run on the release pull request? If a ruleset requires the `build` check, can the pull request be merged?
+   Found: GitHub creates the `CI` run but leaves it `action_required`, with no jobs and no check runs on the pull request, so a required check would block the merge until someone approves the run.
 11. **Publish only from `main`.** With the trusted publisher bound to the `npm` environment and the environment limited to `main`, does a publish job started from another branch fail?
 
 ## Runbook
