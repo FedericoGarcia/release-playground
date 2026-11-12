@@ -1,0 +1,8 @@
+packages:
+  - config/*
+  - packages/*
+
+catalog:
+  typescript: ^6.0.3
+
+minimumReleaseAge: 20160

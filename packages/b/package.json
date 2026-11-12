@@ -1,0 +1,49 @@
+{
+  "name": "@fedegarcia/playground-b",
+  "version": "0.0.0",
+  "description": "Throwaway package used to rehearse a release pipeline. Peers on playground-a.",
+  "keywords": [
+    "playground"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FedericoGarcia/release-playground.git",
+    "directory": "packages/b"
+  },
+  "bugs": {
+    "url": "https://github.com/FedericoGarcia/release-playground/issues"
+  },
+  "homepage": "https://github.com/FedericoGarcia/release-playground#readme",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "@playground/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=24.7.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "peerDependencies": {
+    "@fedegarcia/playground-a": "workspace:*"
+  },
+  "devDependencies": {
+    "@config/typescript": "workspace:*",
+    "@fedegarcia/playground-a": "workspace:*",
+    "typescript": "catalog:"
+  }
+}

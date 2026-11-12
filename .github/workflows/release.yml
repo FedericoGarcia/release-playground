@@ -1,0 +1,71 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      force_publish:
+        description: Run the publish job even when release-please created no release, to recover a failed publish
+        type: boolean
+        default: false
+
+permissions: {}
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      releases_created: ${{ steps.release.outputs.releases_created }}
+
+    steps:
+      - name: Release Please
+        id: release
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  publish:
+    needs: release
+    # Publish steps skip versions already on the registry, so forcing a run is safe.
+    if: needs.release.outputs.releases_created == 'true' || inputs.force_publish
+    runs-on: ubuntu-latest
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup
+        uses: ./.github/actions/setup
+
+      - name: Build
+        run: pnpm build
+
+      - name: Show tool versions
+        run: |
+          node --version
+          npm --version
+          pnpm --version
+
+      # The repository variable PUBLISH_METHOD picks the method without editing this file.
+      - name: Publish with pnpm
+        if: vars.PUBLISH_METHOD != 'npm'
+        run: |
+          pnpm -r publish --no-git-checks --report-summary
+          cat pnpm-publish-summary.json
+
+      - name: Publish with pnpm pack and the npm CLI
+        if: vars.PUBLISH_METHOD == 'npm'
+        run: bash scripts/publish-with-npm.sh
