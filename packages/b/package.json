@@ -1,6 +1,6 @@
 {
   "name": "@fedegarcia/playground-b",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Throwaway package used to rehearse a release pipeline. Peers on playground-a.",
   "keywords": [
     "playground"
