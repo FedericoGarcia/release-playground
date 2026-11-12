@@ -29,6 +29,10 @@
     "packages/b": {
       "component": "playground-b",
       "scope": "b"
+    },
+    "packages/c": {
+      "component": "playground-c",
+      "scope": "c"
     }
   }
 }

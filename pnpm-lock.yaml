@@ -199,6 +199,15 @@ importers:
         specifier: 'catalog:'
         version: 6.0.3
 
+  packages/c:
+    devDependencies:
+      '@config/typescript':
+        specifier: workspace:*
+        version: link:../../config/typescript
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+
 packages:
 
   typescript@6.0.3:
