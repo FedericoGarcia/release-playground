@@ -10,6 +10,8 @@ Throwaway repository for rehearsing a pnpm monorepo release pipeline: release-pl
 | `packages/b` | Peers on `a` through `workspace:*` |
 | `packages/c` | Added after the first release, to check how a new package gets its first version |
 | `packages/d` | First version published by hand at `0.1.0`, so no `0.0.x` version exists |
+| `packages/e` | Bootstrapped with a placeholder, `0.1.0` published by CI with provenance, placeholder removed |
+| `scripts/bootstrap-placeholder.sh` | Publishes the `0.0.0-bootstrap.0` placeholder for a package that does not exist on npm yet |
 | `config/typescript` | Private workspace package used as a `workspace:*` dev dependency; must never be published |
 | `.github/workflows/release.yml` | release-please, then publish when a release is created or when dispatched with `force_publish` |
 | `.github/workflows/ci.yml` | One build check on pull requests, to see whether the release pull request triggers it |
@@ -53,6 +55,8 @@ Each scenario answers one question. Record the answer next to it.
    - `npm unpublish <package>@0.0.0-stage` removes the placeholder npm creates on a first publish (tried on `c`).
    - The version's own URL answered about three minutes before the full package document listed it, and pnpm reads the full document. Merged one second after the version URL answered, CI created the tag and the GitHub release but the publish job failed with `403 "You cannot publish over the previously published versions"`. Waiting until the full document listed `0.1.0` plus five minutes, the publish job passed with `"publishedPackages": []`.
    - The cost: `0.1.0` has no provenance. Later versions are published by CI with it.
+13. **Placeholder, then a CI-published `0.1.0`.** Can the first real version carry provenance and still leave nothing below `0.1.0` on npm?
+   Answer: yes. With `e`: `scripts/bootstrap-placeholder.sh packages/e` published a two-file `0.0.0-bootstrap.0` under the `bootstrap` dist-tag (npm also created `0.0.0-stage` and pointed `latest` at the placeholder); `npm trust` followed, and the release pull request was merged one minute later with no waiting. CI published `0.1.0` through OIDC with provenance and `latest` moved to it. Then `npm unpublish` of `0.0.0-bootstrap.0` and of `0.0.0-stage` both succeeded, and npm dropped the `bootstrap` dist-tag with its version. The package's only version is `0.1.0`. This is the flow to use; scenario 12 is kept as the alternative without a placeholder.
 
 ## Runbook
 
@@ -61,8 +65,8 @@ Each scenario answers one question. Record the answer next to it.
 3. Let Actions open pull requests, which a new repository does not allow by default:
    `gh api -X PUT repos/FedericoGarcia/release-playground/actions/permissions/workflow -f default_workflow_permissions=read -F can_approve_pull_request_reviews=true`
 4. Create the `npm` environment with a deployment branch policy that only allows `main` (Settings → Environments).
-5. Bootstrap each package from an interactive terminal, since npm's web 2FA waits for the browser approval and fails with `EOTP` when it cannot: `nvm use && pnpm build && npm login`, then `nvm use && NPM_DIST_TAG=bootstrap bash scripts/publish-with-npm.sh`. Keep `nvm use` in the same command line, or the script runs without `node` on its `PATH`. `DRY_RUN=1` shows what would be published without publishing.
-6. For each package: `npm trust github <package> --file release.yml --repo FedericoGarcia/release-playground --env npm --allow-publish`.
-7. Push a `feat(a): …` commit, merge the release pull request, and watch the publish job.
+5. For each new package, wait for its release pull request, then bootstrap it from an interactive terminal, since npm's web 2FA waits for the browser approval and fails with `EOTP` when it cannot: `nvm use && npm login && bash scripts/bootstrap-placeholder.sh packages/<name>`. Keep `nvm use` in the same command line, or the script runs without `node` on its `PATH`. A fresh `npm login` matters: an expired session fails the publish with `404 Not Found`.
+6. `npm trust github <package> --file release.yml --repo FedericoGarcia/release-playground --env npm --allow-publish`.
+7. Merge the release pull request; CI publishes `0.1.0` through OIDC with provenance. Once `npm view <package> versions` lists it, `npm unpublish <package>@0.0.0-bootstrap.0` and `npm unpublish <package>@0.0.0-stage`.
 8. If a publish fails, fix the cause and run the `Release` workflow manually with `force_publish`. Re-running the failed job also works, but a new push does not: release-please finds nothing to release and skips the publish job.
 9. The repository and packages stay up as a reference for later questions. To clean up: `npm unpublish <package> --force`, `b` before `a`, since npm refuses to unpublish a package that others depend on. Within 72 hours of the first publish that is the only condition; after that, npm also requires fewer than 300 downloads in the last week and a single maintainer, and `npm deprecate` is the fallback. A version number can never be reused, and unpublishing every version blocks new versions of that name for 24 hours. Then archive the repository.
