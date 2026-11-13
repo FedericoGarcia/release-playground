@@ -8,6 +8,8 @@ Throwaway repository for rehearsing a pnpm monorepo release pipeline: release-pl
 | --- | --- |
 | `packages/a` | Standalone package |
 | `packages/b` | Peers on `a` through `workspace:*` |
+| `packages/c` | Added after the first release, to check how a new package gets its first version |
+| `packages/d` | First version published by hand at `0.1.0`, so no `0.0.x` version exists |
 | `config/typescript` | Private workspace package used as a `workspace:*` dev dependency; must never be published |
 | `.github/workflows/release.yml` | release-please, then publish when a release is created or when dispatched with `force_publish` |
 | `.github/workflows/ci.yml` | One build check on pull requests, to see whether the release pull request triggers it |
@@ -45,6 +47,12 @@ Each scenario answers one question. Record the answer next to it.
    Found: GitHub creates the `CI` run but leaves it `action_required`, with no jobs and no check runs on the pull request, so a required check would block the merge until someone approves the run.
 11. **Publish only from `main`.** With the trusted publisher bound to the `npm` environment and the environment limited to `main`, does a publish job started from another branch fail?
    Answer: yes, at two layers. Dispatched from another branch, the publish job fails before any step runs: "Branch "scenario-11" is not allowed to deploy to npm due to environment protection rules." With `environment: npm` removed from the workflow on that branch, npm refuses the OIDC token exchange (`404`); pnpm logs `Skipped OIDC: ERR_PNPM_AUTH_TOKEN_EXCHANGE`, publishes without credentials and fails with `404 Not Found`. A trusted publisher that does not match the workflow therefore surfaces as "not found", not as an authentication error. Nothing was published.
+12. **No version below `0.1.0`.** Can a new package start at `0.1.0`, with no bootstrap version and no `0.0.x` at all?
+   Answer: yes, if its first version is the real `0.1.0`, published by hand from the release pull request's head. With `d`: release-please proposed `0.1.0`; the owner ran `npm login`, published `0.1.0` from a detached worktree of the pull request, ran `npm trust`, and the release pull request was merged afterwards. Findings along the way:
+   - An expired `npm login` session makes the publish fail with `404 Not Found`, not with an authentication error.
+   - `npm unpublish <package>@0.0.0-stage` removes the placeholder npm creates on a first publish (tried on `c`).
+   - The version's own URL answered about three minutes before the full package document listed it, and pnpm reads the full document. Merged one second after the version URL answered, CI created the tag and the GitHub release but the publish job failed with `403 "You cannot publish over the previously published versions"`. Waiting until the full document listed `0.1.0` plus five minutes, the publish job passed with `"publishedPackages": []`.
+   - The cost: `0.1.0` has no provenance. Later versions are published by CI with it.
 
 ## Runbook
 
