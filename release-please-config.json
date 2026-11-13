@@ -37,6 +37,10 @@
     "packages/d": {
       "component": "playground-d",
       "scope": "d"
+    },
+    "packages/e": {
+      "component": "playground-e",
+      "scope": "e"
     }
   }
 }
