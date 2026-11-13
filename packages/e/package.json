@@ -1,6 +1,6 @@
 {
   "name": "@fedegarcia/playground-e",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Throwaway package used to rehearse a placeholder bootstrap followed by a CI-published 0.1.0.",
   "keywords": [
     "playground"
